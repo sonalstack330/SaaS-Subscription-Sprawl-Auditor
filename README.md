@@ -22,3 +22,22 @@ database doing the real work (not application-side loops).
 | Scheduled batch job pattern | `IdleDetectionJob` (stands in for Spring `@Scheduled`) |
 | Schema migration versioning | `sql/migrations/` (Flyway-style) |
 | Polyglot analysis (Java + Python) | `python/analyze.py` reproduces the SQL reports in pandas |
+
+## Project layout
+
+```
+saas-sprawl-auditor/
+├── sql/
+│   ├── schema.sql                 # target-DB schema (MySQL/Postgres dialect)
+│   ├── schema_sqlite.sql          # SQLite dialect used by the runnable demo
+│   ├── analytical_queries.sql     # the interview-worthy standalone queries
+│   └── migrations/                # Flyway-style versioned migrations (example)
+├── src/main/java/com/sprawlauditor/
+│   ├── Main.java                  # demo runner
+│   ├── IdleDetectionJob.java      # nightly flagging job
+│   ├── dao/DatabaseManager.java   # connection + schema bootstrap + data seeding
+│   ├── dao/SprawlAuditDao.java    # the two core queries
+│   └── model/                     # IdleSubscription, ToolOverlap
+├── python/analyze.py              # pandas re-implementation of both reports
+└── lib/sqlite-jdbc.jar            # JDBC driver (demo uses SQLite, no server needed)
+```
