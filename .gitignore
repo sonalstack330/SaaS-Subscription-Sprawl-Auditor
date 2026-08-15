@@ -4,3 +4,5 @@ target/
 *.iml
 out/
 *.log
+
+src/main/resources/db.properties
