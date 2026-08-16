@@ -65,14 +65,14 @@ public class DataSeeder {
         // something real to find.
         String[][] toolCatalog = {
                 {"Jira", "Atlassian", "project-management"},
+                {"Zoho Projects", "Zoho Corporation", "project-management"},
                 {"Asana", "Asana Inc", "project-management"},
-                {"Linear", "Linear", "project-management"},
                 {"Figma", "Figma Inc", "design"},
-                {"Sketch", "Sketch B.V.", "design"},
+                {"Canva", "Canva Pty Ltd", "design"},
                 {"Slack", "Salesforce", "communication"},
-                {"Zoom", "Zoom", "communication"},
-                {"Snowflake", "Snowflake Inc", "data-warehouse"},
-                {"Looker", "Google", "analytics"},
+                {"Freshchat", "Freshworks", "communication"},
+                {"Chargebee", "Chargebee Inc", "billing"},
+                {"Zoho Analytics", "Zoho Corporation", "analytics"},
                 {"Tableau", "Salesforce", "analytics"},
         };
         int[] toolIds = new int[toolCatalog.length];
