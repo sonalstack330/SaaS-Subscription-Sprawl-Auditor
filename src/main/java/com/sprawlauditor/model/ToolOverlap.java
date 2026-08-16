@@ -25,7 +25,7 @@ public class ToolOverlap {
     @Override
     public String toString() {
         return String.format(
-                "[Team %-2d] %-20s %s <-> %s combined=$%.2f/mo",
+                "[Team %-2d] %-20s %s <-> %s combined=₹%.2f/mo",
                 teamId, category, toolA, toolB, combinedMonthlyCost
         );
     }

@@ -23,8 +23,9 @@ public class Main {
 
             System.out.println("\n== Company-wide spend summary ==");
             double[] summary = dao.getSpendSummary();
-            System.out.printf("  Total monthly SaaS spend:   $%.2f%n", summary[0]);
-            System.out.printf("  Already flagged for review: $%.2f%n", summary[1]);
+
+            System.out.printf("  Total monthly SaaS spend:   ₹%.2f%n", summary[0]);
+            System.out.printf("  Already flagged for review: ₹%.2f%n", summary[1]);
 
             System.out.println("\n== Idle subscriptions (no login in " + IDLE_THRESHOLD_DAYS + "+ days) ==");
             List<IdleSubscription> idle = dao.findIdleSubscriptions(IDLE_THRESHOLD_DAYS);

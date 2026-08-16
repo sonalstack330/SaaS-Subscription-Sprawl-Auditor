@@ -33,7 +33,7 @@ public class IdleSubscription {
     @Override
     public String toString() {
         return String.format(
-                "[Sub #%-3d] %-14s team=%-2d cost=$%-7.2f seats=%d idle=%d wasted=$%.2f/mo",
+                "[Sub #%-3d] %-16s team=%-2d cost=₹%-8.2f seats=%d idle=%d wasted=₹%.2f/mo",
                 subscriptionId, toolName, teamId, monthlyCost, seatsPurchased, idleSeatCount, estimatedWastedSpend
         );
     }
