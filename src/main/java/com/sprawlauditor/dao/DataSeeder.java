@@ -128,7 +128,7 @@ public class DataSeeder {
                 int[] toolsForTeam = pickToolsForTeam(t, toolIds.length);
 
                 for (int toolIdx : toolsForTeam) {
-                    double baseCostPerSeat = 8 + rng.nextInt(40);
+                    double baseCostPerSeat = 300 + rng.nextInt(2200);
                     int seatsPurchased = usersByTeam[t].length;
 
                     subPs.setInt(1, teamIds[t]);
@@ -172,9 +172,9 @@ public class DataSeeder {
 
     private int[] pickToolsForTeam(int teamIndex, int toolCatalogSize) {
         List<Integer> picks = new ArrayList<>();
-        if (teamIndex == 0) { picks.add(0); picks.add(1); }        // Growth: Jira + Asana overlap
-        else if (teamIndex == 2) { picks.add(3); picks.add(4); }   // Design: Figma + Sketch overlap
-        else if (teamIndex == 1) { picks.add(2); }                 // Platform Eng: Linear
+        if (teamIndex == 0) { picks.add(0); picks.add(1); }        // Growth: Jira + Zoho Projects overlap
+        else if (teamIndex == 2) { picks.add(3); picks.add(4); }   // Design: Figma + Canva overlap
+        else if (teamIndex == 1) { picks.add(2); picks.add(6); }   // Platform Eng: Asana + Freshchat + Slack overlap
         else if (teamIndex == 3) { picks.add(7); picks.add(8); picks.add(9); } // Data Science: overlap
         else { picks.add(5); }                                     // Sales Ops: Slack
 
