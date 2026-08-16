@@ -27,10 +27,22 @@ public class DataSeeder {
     }
 
     public void seed() throws SQLException {
+        if (alreadySeeded()) {
+            System.out.println("Data already seeded — skipping (truncate tables manually to reseed).");
+            return;
+        }
         int[] teamIds = insertTeams();
         int[] toolIds = insertTools();
         int[][] usersByTeam = insertUsers(teamIds);
         insertSubscriptionsSeatsAndEvents(teamIds, toolIds, usersByTeam);
+    }
+
+    private boolean alreadySeeded() throws SQLException {
+        try (var stmt = connection.createStatement();
+             var rs = stmt.executeQuery("SELECT COUNT(*) FROM teams")) {
+            rs.next();
+            return rs.getInt(1) > 0;
+        }
     }
 
     private int[] insertTeams() throws SQLException {
@@ -180,4 +192,5 @@ public class DataSeeder {
             return rs.getInt(1);
         }
     }
+
 }
