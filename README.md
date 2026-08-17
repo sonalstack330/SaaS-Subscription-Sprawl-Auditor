@@ -73,7 +73,35 @@ sprawl-auditor/
 5. Run `Main.java` — first run seeds the database; subsequent runs skip
    seeding automatically and just re-run the reports
 
-##Sample Output
+## Sample Output
+
+## Sample output
+
+```
+== Idle subscriptions (no login in 60+ days) ==
+  [Sub #12] Tableau        team=4  cost=₹12054.00  seats=6  idle=6  wasted=₹12054.00/mo
+  [Sub #4 ] Asana          team=2  cost=₹12150.00  seats=6  idle=5  wasted=₹10125.00/mo
+  [Sub #8 ] Canva          team=3  cost=₹10432.00  seats=8  idle=6  wasted=₹7824.00/mo
+  ...
+  --> Estimated total wasted spend: ₹66520.00/mo
+
+== Category overlaps (same team, 2+ tools, same category) ==
+  [Team 5] communication        Slack <-> Freshchat        combined=₹29358.00/mo
+  [Team 3] design               Figma <-> Canva            combined=₹27208.00/mo
+  [Team 4] analytics            Zoho Analytics <-> Tableau combined=₹24624.00/mo
+  [Team 1] project-management   Jira <-> Zoho Projects     combined=₹11720.00/mo
+  [Team 2] communication        Freshchat <-> Slack        combined=₹10350.00/mo
+
+== Running idle-detection job ==
+  Flagged 5 subscription(s) as UNDER_REVIEW
+
+== Subscriptions currently UNDER_REVIEW ==
+  [Sub #13] Slack       team=4  cost=₹12654.00
+  [Sub #4 ] Asana       team=2  cost=₹12150.00
+  [Sub #12] Tableau     team=4  cost=₹12054.00
+  [Sub #8 ] Canva       team=3  cost=₹10432.00
+  [Sub #5 ] Freshchat   team=2  cost=₹5784.00
+```
 
 ## Setup
 
