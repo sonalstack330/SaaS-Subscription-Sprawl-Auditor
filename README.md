@@ -20,21 +20,22 @@ database doing the real work (not application-side loops).
 4. Flags subscriptions with 50%+ idle seats as `UNDER_REVIEW` — a nightly
    batch-job pattern that marks waste for a human to review, without
    auto-cancelling anything.
-5. 
+
 ## What it demonstrates
 
 | Area | Where |
 |---|---|
 | Normalized relational schema (3NF) | `sql/schema.sql` |
-| Composite / covering index design | `idx_usage_sub_user_date` — verified with `EXPLAIN QUERY PLAN` below |
-| Window functions (`LAG`, gap analysis) | `sql/analytical_queries.sql` Q1 |
+| Composite index design | `idx_usage_sub_user_date` on `usage_events` |
 | CTEs for multi-step aggregation | `SprawlAuditDao.findIdleSubscriptions()` |
 | Self-join for overlap detection | `SprawlAuditDao.findCategoryOverlaps()` |
+| Conditional aggregation (`SUM(CASE WHEN...)`) | `SprawlAuditDao.flagIdleSubscriptions()` |
 | Views | `vw_seat_last_used`, `vw_idle_subscriptions` |
-| Triggers / status state transitions | `trg_flag_zero_seat_subscription` |
-| Scheduled batch job pattern | `IdleDetectionJob` (stands in for Spring `@Scheduled`) |
-| Schema migration versioning | `sql/migrations/` (Flyway-style) |
-| Polyglot analysis (Java + Python) | `python/analyze.py` reproduces the SQL reports in pandas |
+| Trigger / status state transitions | `trg_flag_zero_seat_subscription` |
+| Read vs. write DB operations | `findIdleSubscriptions()` (SELECT) vs. `flagIdleSubscriptions()` (UPDATE) |
+| Idempotent data seeding | `DataSeeder.alreadySeeded()` |
+| JUnit tests against real query logic | `src/test/java/.../SprawlAuditDaoTest.java` |
+| Verifying automated actions, not just trusting a count | `SprawlAuditDao.findFlaggedSubscriptions()` |
 
 ## Project layout
 
@@ -93,3 +94,37 @@ Run `SprawlAuditDaoTest` in IntelliJ. Tests use `@BeforeEach` to reset every
 subscription to `ACTIVE` before each test runs — without this, tests that
 flag subscriptions would interfere with tests that check for active-only
 overlaps, since JUnit doesn't guarantee test execution order.
+
+## Reseeding with fresh data
+
+`DataSeeder` is idempotent — if `teams` already has rows, it skips seeding
+entirely instead of inserting duplicates. This means running `Main` a second
+time will **not** regenerate new random data; it just re-runs the reports
+against whatever's already there.
+
+To force fresh synthetic data (e.g. after changing pricing or the tool
+catalog in `DataSeeder.java`), truncate all tables first:
+
+```powershell
+mysql -u root -p
+```
+Then inside the MySQL prompt:
+
+```sql
+USE sprawl_auditor;
+SET FOREIGN_KEY_CHECKS=0;
+TRUNCATE usage_events;
+TRUNCATE subscription_seats;
+TRUNCATE subscriptions;
+TRUNCATE tools;
+TRUNCATE users;
+TRUNCATE teams;
+SET FOREIGN_KEY_CHECKS=1;
+exit;
+```
+
+Tables must be truncated in this order (child tables before parent tables)
+to satisfy foreign key constraints — reversing the order will fail even with
+`FOREIGN_KEY_CHECKS` disabled in some MySQL configurations.
+
+Then rerun `Main.java` — it will detect the empty `teams` table and
