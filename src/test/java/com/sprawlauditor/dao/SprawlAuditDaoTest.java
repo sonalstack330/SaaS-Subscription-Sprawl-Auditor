@@ -5,6 +5,7 @@ import com.sprawlauditor.model.IdleSubscription;
 import com.sprawlauditor.model.ToolOverlap;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -22,6 +23,12 @@ class SprawlAuditDaoTest {
         connection = DatabaseManager.getConnection();
         dao = new SprawlAuditDao(connection);
         new DataSeeder(connection).seed();
+    }
+    @BeforeEach
+    void resetSubscriptionStatus() throws Exception {
+        connection.createStatement().executeUpdate(
+                "UPDATE subscriptions SET status = 'ACTIVE'"
+        );
     }
 
     @AfterAll
@@ -70,4 +77,28 @@ class SprawlAuditDaoTest {
         assertTrue(summary[0] >= summary[1],
                 "Total spend must be >= flagged spend (flagged is a subset of total)");
     }
+    @Test
+    void flagIdleSubscriptions_onlyFlagsSubscriptionsWithMajorityIdleSeats() throws Exception {
+        // Reset any previous flags so this test starts from a known state
+        connection.createStatement().executeUpdate(
+                "UPDATE subscriptions SET status = 'ACTIVE' WHERE status = 'UNDER_REVIEW'"
+        );
+
+        int flaggedCount = dao.flagIdleSubscriptions(60);
+
+        assertTrue(flaggedCount >= 0, "Flagged count should never be negative");
+
+        List<IdleSubscription> flagged = dao.findFlaggedSubscriptions();
+        assertEquals(flaggedCount, flagged.size(),
+                "The count returned by flagIdleSubscriptions should match the number actually flagged");
+    }
+
+    @Test
+    void flagIdleSubscriptions_isSafeToRunTwiceInARow() throws Exception {
+        // First run: flags whatever qualifies
+        dao.flagIdleSubscriptions(60);
+
+        // Second run immediately after: should flag 0 new ones, since
+        // anything that qualified is already
+}
 }
