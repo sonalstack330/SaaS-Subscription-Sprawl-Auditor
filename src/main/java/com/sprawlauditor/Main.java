@@ -34,7 +34,7 @@ public class Main {
             } else {
                 idle.forEach(sub -> System.out.println("  " + sub));
                 double totalWasted = idle.stream().mapToDouble(IdleSubscription::getEstimatedWastedSpend).sum();
-                System.out.printf("  --> Estimated total wasted spend: $%.2f/mo%n", totalWasted);
+                System.out.printf("  --> Estimated total wasted spend: ₹%.2f/mo%n", totalWasted);
             }
 
             System.out.println("\n== Category overlaps (same team, 2+ tools, same category) ==");
