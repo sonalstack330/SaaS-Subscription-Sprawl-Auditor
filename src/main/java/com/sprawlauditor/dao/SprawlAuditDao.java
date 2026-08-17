@@ -116,4 +116,32 @@ public class SprawlAuditDao {
             return new double[]{rs.getDouble("total_monthly_spend"), rs.getDouble("flagged_monthly_spend")};
         }
     }
+    /**
+     * The "highlighter" — flags subscriptions as UNDER_REVIEW if they
+     * have idle seats past the threshold. Doesn't cancel anything,
+     * just changes the status label so a human can find them later.
+     */
+    public int flagIdleSubscriptions(int idleThresholdDays) throws SQLException {
+        String sql =
+                "UPDATE subscriptions s " +
+                        "SET s.status = 'UNDER_REVIEW' " +
+                        "WHERE s.status = 'ACTIVE' " +
+                        "  AND s.subscription_id IN ( " +
+                        "      SELECT subscription_id FROM ( " +
+                        "          SELECT ss.subscription_id " +
+                        "          FROM subscription_seats ss " +
+                        "          LEFT JOIN usage_events ue " +
+                        "              ON ue.subscription_id = ss.subscription_id " +
+                        "             AND ue.user_id = ss.user_id " +
+                        "          GROUP BY ss.subscription_id, ss.user_id " +
+                        "          HAVING MAX(ue.event_date) IS NULL " +
+                        "              OR MAX(ue.event_date) < DATE_SUB(CURDATE(), INTERVAL ? DAY) " +
+                        "      ) AS idle_seat_subs " +
+                        "  )";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, idleThresholdDays);
+            return ps.executeUpdate();
+        }
+    }
 }
