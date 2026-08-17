@@ -128,15 +128,22 @@ public class SprawlAuditDao {
                         "WHERE s.status = 'ACTIVE' " +
                         "  AND s.subscription_id IN ( " +
                         "      SELECT subscription_id FROM ( " +
-                        "          SELECT ss.subscription_id " +
+                        "          SELECT ss.subscription_id, " +
+                        "                 COUNT(*) AS total_seats, " +
+                        "                 SUM(CASE WHEN last_used.last_used_date IS NULL " +
+                        "                          OR last_used.last_used_date < DATE_SUB(CURDATE(), INTERVAL ? DAY) " +
+                        "                     THEN 1 ELSE 0 END) AS idle_seats " +
                         "          FROM subscription_seats ss " +
-                        "          LEFT JOIN usage_events ue " +
-                        "              ON ue.subscription_id = ss.subscription_id " +
-                        "             AND ue.user_id = ss.user_id " +
-                        "          GROUP BY ss.subscription_id, ss.user_id " +
-                        "          HAVING MAX(ue.event_date) IS NULL " +
-                        "              OR MAX(ue.event_date) < DATE_SUB(CURDATE(), INTERVAL ? DAY) " +
-                        "      ) AS idle_seat_subs " +
+                        "          LEFT JOIN ( " +
+                        "              SELECT subscription_id, user_id, MAX(event_date) AS last_used_date " +
+                        "              FROM usage_events " +
+                        "              GROUP BY subscription_id, user_id " +
+                        "          ) last_used " +
+                        "              ON last_used.subscription_id = ss.subscription_id " +
+                        "             AND last_used.user_id = ss.user_id " +
+                        "          GROUP BY ss.subscription_id " +
+                        "          HAVING idle_seats >= total_seats * 0.5 " +
+                        "      ) AS majority_idle_subs " +
                         "  )";
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
