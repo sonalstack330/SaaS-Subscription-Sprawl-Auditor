@@ -142,3 +142,21 @@ subscription to `ACTIVE` before each test runs — without this, tests that
 flag subscriptions would interfere with tests that check for active-only
 overlaps, since JUnit doesn't guarantee test execution order.
 
+## Future improvements
+
+- **Frontend dashboard (HTML/CSS/Bootstrap/JS)** — a browser-based UI on
+  top of the existing DAO layer, to replace/supplement the console output.
+  Plan: a small Java `HttpServer`-based API layer (no new framework needed)
+  exposing the existing `SprawlAuditDao` queries as JSON endpoints
+  (`/api/idle-subscriptions`, `/api/overlaps`, `/api/flagged`), with a
+  Bootstrap-styled page fetching and rendering that data via JS. Possibly
+  including a button to trigger `flagIdleSubscriptions()` from the browser,
+  not just display results.
+- **Redis caching** — cache-aside pattern for `getSpendSummary()` (or other
+  read-heavy queries) with TTL-based invalidation. Needs a real Redis
+  instance running locally; deliberately deferred as its own session rather
+  than bolted on without properly setting up the infrastructure.
+- **Automatic scheduling** — currently `flagIdleSubscriptions()` only runs
+  when `Main` is manually executed. A real deployment would run this
+  nightly via a scheduler (e.g. Windows Task Scheduler calling a packaged
+  jar, or Spring's `@Scheduled` if the project ever moves to Spring Boot).
