@@ -8,6 +8,19 @@ This isn't modeled after an existing product — it's built around an
 original schema and two non-trivial analytical queries, with the
 database doing the real work (not application-side loops).
 
+## What it does
+
+1. Seeds a MySQL database with a synthetic company: teams, Indian SaaS tools
+   (Zoho, Freshworks, Chargebee, etc.), subscriptions, and login history —
+   deliberately shaped so some seats look unused and some teams pay for
+   overlapping tools.
+2. Reports which subscriptions have mostly-idle seats, and estimates the
+   wasted monthly spend.
+3. Reports which teams are paying for 2+ tools that do the same job.
+4. Flags subscriptions with 50%+ idle seats as `UNDER_REVIEW` — a nightly
+   batch-job pattern that marks waste for a human to review, without
+   auto-cancelling anything.
+5. 
 ## What it demonstrates
 
 | Area | Where |
@@ -26,18 +39,57 @@ database doing the real work (not application-side loops).
 ## Project layout
 
 ```
-saas-sprawl-auditor/
+sprawl-auditor/
 ├── sql/
-│   ├── schema.sql                 # target-DB schema (MySQL/Postgres dialect)
-│   ├── schema_sqlite.sql          # SQLite dialect used by the runnable demo
-│   ├── analytical_queries.sql     # the interview-worthy standalone queries
-│   └── migrations/                # Flyway-style versioned migrations (example)
-├── src/main/java/com/sprawlauditor/
-│   ├── Main.java                  # demo runner
-│   ├── IdleDetectionJob.java      # nightly flagging job
-│   ├── dao/DatabaseManager.java   # connection + schema bootstrap + data seeding
-│   ├── dao/SprawlAuditDao.java    # the two core queries
-│   └── model/                     # IdleSubscription, ToolOverlap
-├── python/analyze.py              # pandas re-implementation of both reports
-└── lib/sqlite-jdbc.jar            # JDBC driver (demo uses SQLite, no server needed)
+│ └── schema.sql # MySQL schema: tables, indexes, views, trigger
+├── src/
+│ ├── main/java/com/sprawlauditor/
+│ │ ├── Main.java # runs the seeder + all reports
+│ │ ├── config/DatabaseManager.java # reads db.properties, opens JDBC connection
+│ │ ├── dao/
+│ │ │ ├── DataSeeder.java # synthetic teams/tools/subscriptions/usage
+│ │ │ └── SprawlAuditDao.java # all queries: idle detection, overlaps, flagging
+│ │ └── model/
+│ │ ├── IdleSubscription.java
+│ │ └── ToolOverlap.java
+│ ├── main/resources/
+│ │ └── db.properties.example # copy to db.properties, fill in your credentials
+│ └── test/java/com/sprawlauditor/dao/
+│ └── SprawlAuditDaoTest.java # 8 tests covering all DAO methods
+└── pom.xml
+
 ```
+## Setup
+
+1. Install MySQL locally, confirm it's running on port 3306
+2. Run the schema:
+```powershell
+   mysql -u root -p < sql\schema.sql
+```
+3. Copy `db.properties.example` to `db.properties` (same folder), fill in your
+   actual MySQL username/password — this file is gitignored and never committed
+4. `mvn compile` to confirm the build works
+5. Run `Main.java` — first run seeds the database; subsequent runs skip
+   seeding automatically and just re-run the reports
+
+##Sample Output
+
+## Setup
+
+1. Install MySQL locally, confirm it's running on port 3306
+2. Run the schema:
+```powershell
+   mysql -u root -p < sql\schema.sql
+```
+3. Copy `db.properties.example` to `db.properties` (same folder), fill in your
+   actual MySQL username/password — this file is gitignored and never committed
+4. `mvn compile` to confirm the build works
+5. Run `Main.java` — first run seeds the database; subsequent runs skip
+   seeding automatically and just re-run the reports
+
+## Tests
+
+Run `SprawlAuditDaoTest` in IntelliJ. Tests use `@BeforeEach` to reset every
+subscription to `ACTIVE` before each test runs — without this, tests that
+flag subscriptions would interfere with tests that check for active-only
+overlaps, since JUnit doesn't guarantee test execution order.
