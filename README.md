@@ -5,7 +5,7 @@ pay FinOps/IT-ops tools to solve: **which SaaS subscriptions are we
 wasting money on, and where are teams paying for overlapping tools?**
 
 This isn't modeled after an existing product — it's built around an
-original schema and two non-trivial analytical queries, with the
+original schema and a handful of non-trivial analytical queries, with the
 database doing the real work (not application-side loops).
 
 ## What it does
@@ -73,56 +73,6 @@ sprawl-auditor/
 5. Run `Main.java` — first run seeds the database; subsequent runs skip
    seeding automatically and just re-run the reports
 
-## Sample Output
-
-## Sample output
-
-```
-== Idle subscriptions (no login in 60+ days) ==
-  [Sub #12] Tableau        team=4  cost=₹12054.00  seats=6  idle=6  wasted=₹12054.00/mo
-  [Sub #4 ] Asana          team=2  cost=₹12150.00  seats=6  idle=5  wasted=₹10125.00/mo
-  [Sub #8 ] Canva          team=3  cost=₹10432.00  seats=8  idle=6  wasted=₹7824.00/mo
-  ...
-  --> Estimated total wasted spend: ₹66520.00/mo
-
-== Category overlaps (same team, 2+ tools, same category) ==
-  [Team 5] communication        Slack <-> Freshchat        combined=₹29358.00/mo
-  [Team 3] design               Figma <-> Canva            combined=₹27208.00/mo
-  [Team 4] analytics            Zoho Analytics <-> Tableau combined=₹24624.00/mo
-  [Team 1] project-management   Jira <-> Zoho Projects     combined=₹11720.00/mo
-  [Team 2] communication        Freshchat <-> Slack        combined=₹10350.00/mo
-
-== Running idle-detection job ==
-  Flagged 5 subscription(s) as UNDER_REVIEW
-
-== Subscriptions currently UNDER_REVIEW ==
-  [Sub #13] Slack       team=4  cost=₹12654.00
-  [Sub #4 ] Asana       team=2  cost=₹12150.00
-  [Sub #12] Tableau     team=4  cost=₹12054.00
-  [Sub #8 ] Canva       team=3  cost=₹10432.00
-  [Sub #5 ] Freshchat   team=2  cost=₹5784.00
-```
-
-## Setup
-
-1. Install MySQL locally, confirm it's running on port 3306
-2. Run the schema:
-```powershell
-   mysql -u root -p < sql\schema.sql
-```
-3. Copy `db.properties.example` to `db.properties` (same folder), fill in your
-   actual MySQL username/password — this file is gitignored and never committed
-4. `mvn compile` to confirm the build works
-5. Run `Main.java` — first run seeds the database; subsequent runs skip
-   seeding automatically and just re-run the reports
-
-## Tests
-
-Run `SprawlAuditDaoTest` in IntelliJ. Tests use `@BeforeEach` to reset every
-subscription to `ACTIVE` before each test runs — without this, tests that
-flag subscriptions would interfere with tests that check for active-only
-overlaps, since JUnit doesn't guarantee test execution order.
-
 ## Reseeding with fresh data
 
 `DataSeeder` is idempotent — if `teams` already has rows, it skips seeding
@@ -155,4 +105,40 @@ Tables must be truncated in this order (child tables before parent tables)
 to satisfy foreign key constraints — reversing the order will fail even with
 `FOREIGN_KEY_CHECKS` disabled in some MySQL configurations.
 
-Then rerun `Main.java` — it will detect the empty `teams` table and
+Then rerun `Main.java` — it will detect the empty `teams` table and reseed from scratch.
+
+## Sample output
+
+```
+== Idle subscriptions (no login in 60+ days) ==
+  [Sub #12] Tableau        team=4  cost=₹12054.00  seats=6  idle=6  wasted=₹12054.00/mo
+  [Sub #4 ] Asana          team=2  cost=₹12150.00  seats=6  idle=5  wasted=₹10125.00/mo
+  [Sub #8 ] Canva          team=3  cost=₹10432.00  seats=8  idle=6  wasted=₹7824.00/mo
+  ...
+  --> Estimated total wasted spend: ₹66520.00/mo
+
+== Category overlaps (same team, 2+ tools, same category) ==
+  [Team 5] communication        Slack <-> Freshchat        combined=₹29358.00/mo
+  [Team 3] design               Figma <-> Canva            combined=₹27208.00/mo
+  [Team 4] analytics            Zoho Analytics <-> Tableau combined=₹24624.00/mo
+  [Team 1] project-management   Jira <-> Zoho Projects     combined=₹11720.00/mo
+  [Team 2] communication        Freshchat <-> Slack        combined=₹10350.00/mo
+
+== Running idle-detection job ==
+  Flagged 5 subscription(s) as UNDER_REVIEW
+
+== Subscriptions currently UNDER_REVIEW ==
+  [Sub #13] Slack       team=4  cost=₹12654.00
+  [Sub #4 ] Asana       team=2  cost=₹12150.00
+  [Sub #12] Tableau     team=4  cost=₹12054.00
+  [Sub #8 ] Canva       team=3  cost=₹10432.00
+  [Sub #5 ] Freshchat   team=2  cost=₹5784.00
+```
+
+## Tests
+
+Run `SprawlAuditDaoTest` in IntelliJ. Tests use `@BeforeEach` to reset every
+subscription to `ACTIVE` before each test runs — without this, tests that
+flag subscriptions would interfere with tests that check for active-only
+overlaps, since JUnit doesn't guarantee test execution order.
+
