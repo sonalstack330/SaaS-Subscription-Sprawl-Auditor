@@ -16,18 +16,18 @@ public class Main {
     public static void main(String[] args) throws Exception {
         try (Connection conn = DatabaseManager.getConnection()) {
 
-            System.out.println("== Seeding synthetic demo data ==");
+            System.out.println("----Seeding demo data----");
             new DataSeeder(conn).seed();
 
             SprawlAuditDao dao = new SprawlAuditDao(conn);
 
-            System.out.println("\n== Company-wide spend summary ==");
+            System.out.println("\n----Company-wide spend summary----");
             double[] summary = dao.getSpendSummary();
 
             System.out.printf("  Total monthly SaaS spend:   ₹%.2f%n", summary[0]);
             System.out.printf("  Already flagged for review: ₹%.2f%n", summary[1]);
 
-            System.out.println("\n== Idle subscriptions (no login in " + IDLE_THRESHOLD_DAYS + "+ days) ==");
+            System.out.println("\n----Idle subscriptions (no login in " + IDLE_THRESHOLD_DAYS + "+ days)----");
             List<IdleSubscription> idle = dao.findIdleSubscriptions(IDLE_THRESHOLD_DAYS);
             if (idle.isEmpty()) {
                 System.out.println("  (none found)");
@@ -37,7 +37,7 @@ public class Main {
                 System.out.printf("  --> Estimated total wasted spend: ₹%.2f/mo%n", totalWasted);
             }
 
-            System.out.println("\n== Category overlaps (same team, 2+ tools, same category) ==");
+            System.out.println("\n----Category overlaps (same team, 2+ tools, same category)----");
             List<ToolOverlap> overlaps = dao.findCategoryOverlaps();
             if (overlaps.isEmpty()) {
                 System.out.println("  (none found)");
@@ -45,9 +45,20 @@ public class Main {
                 overlaps.forEach(o -> System.out.println("  " + o));
             }
 
-            System.out.println("\n== Running idle-detection job ==");
+            System.out.println("\n----Running idle-detection job----");
             int flaggedCount = dao.flagIdleSubscriptions(IDLE_THRESHOLD_DAYS);
             System.out.println("  Flagged " + flaggedCount + " subscription(s) as UNDER_REVIEW");
+
+            System.out.println("\n----Subscriptions currently UNDER_REVIEW----");
+            List<IdleSubscription> flagged = dao.findFlaggedSubscriptions();
+            if (flagged.isEmpty()) {
+                System.out.println("  (none)");
+            } else {
+                flagged.forEach(sub -> System.out.printf(
+                        "  [Sub #%-3d] %-16s team=%-2d cost=₹%.2f%n",
+                        sub.getSubscriptionId(), sub.getToolName(), sub.getTeamId(), sub.getMonthlyCost()
+                ));
+            }
         }
         }
 }

@@ -151,4 +151,35 @@ public class SprawlAuditDao {
             return ps.executeUpdate();
         }
     }
+    /**
+     * Shows exactly which subscriptions are currently UNDER_REVIEW —
+     * lets you actually see what flagIdleSubscriptions() did, instead
+     * of just trusting the count it returns.
+     */
+    public List<IdleSubscription> findFlaggedSubscriptions() throws SQLException {
+        String sql =
+                "SELECT s.subscription_id, s.team_id, t.tool_name, s.monthly_cost, " +
+                        "       s.seats_purchased, 0 AS idle_seat_count, 0.0 AS estimated_wasted_spend " +
+                        "FROM subscriptions s " +
+                        "JOIN tools t ON t.tool_id = s.tool_id " +
+                        "WHERE s.status = 'UNDER_REVIEW' " +
+                        "ORDER BY s.monthly_cost DESC";
+
+        List<IdleSubscription> results = new ArrayList<>();
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                results.add(new IdleSubscription(
+                        rs.getInt("subscription_id"),
+                        rs.getInt("team_id"),
+                        rs.getString("tool_name"),
+                        rs.getDouble("monthly_cost"),
+                        rs.getInt("seats_purchased"),
+                        rs.getInt("idle_seat_count"),
+                        rs.getDouble("estimated_wasted_spend")
+                ));
+            }
+        }
+        return results;
+    }
 }
