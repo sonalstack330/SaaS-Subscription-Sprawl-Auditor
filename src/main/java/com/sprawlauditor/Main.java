@@ -44,6 +44,10 @@ public class Main {
             } else {
                 overlaps.forEach(o -> System.out.println("  " + o));
             }
+
+            System.out.println("\n== Running idle-detection job ==");
+            int flaggedCount = dao.flagIdleSubscriptions(IDLE_THRESHOLD_DAYS);
+            System.out.println("  Flagged " + flaggedCount + " subscription(s) as UNDER_REVIEW");
         }
-    }
+        }
 }
