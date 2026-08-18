@@ -11,7 +11,7 @@ database doing the real work (not application-side loops).
 ## What it does
 
 1. Seeds a MySQL database with a synthetic company: teams, Indian SaaS tools
-   (Zoho, Freshworks, Chargebee, etc.), subscriptions, and login history —
+   (Zoho, Frameworks, Charge, etc.), subscriptions, and login history —
    deliberately shaped so some seats look unused and some teams pay for
    overlapping tools.
 2. Reports which subscriptions have mostly-idle seats, and estimates the
@@ -68,7 +68,7 @@ sprawl-auditor/
    mysql -u root -p < sql\schema.sql
 ```
 3. Copy `db.properties.example` to `db.properties` (same folder), fill in your
-   actual MySQL username/password — this file is gitignored and never committed
+   actual MySQL username/password — this file is gitignore and never committed
 4. `mvn compile` to confirm the build works
 5. Run `Main.java` — first run seeds the database; subsequent runs skip
    seeding automatically and just re-run the reports
@@ -152,11 +152,32 @@ overlaps, since JUnit doesn't guarantee test execution order.
   Bootstrap-styled page fetching and rendering that data via JS. Possibly
   including a button to trigger `flagIdleSubscriptions()` from the browser,
   not just display results.
+
 - **Redis caching** — cache-aside pattern for `getSpendSummary()` (or other
   read-heavy queries) with TTL-based invalidation. Needs a real Redis
   instance running locally; deliberately deferred as its own session rather
   than bolted on without properly setting up the infrastructure.
+
 - **Automatic scheduling** — currently `flagIdleSubscriptions()` only runs
   when `Main` is manually executed. A real deployment would run this
   nightly via a scheduler (e.g. Windows Task Scheduler calling a packaged
   jar, or Spring's `@Scheduled` if the project ever moves to Spring Boot).
+
+- **Subscription renewal date** — add a `renewal_date` column to
+  `subscriptions`, and a new report: "which subscriptions renew in the
+  next 30 days?" This becomes a third real waste signal alongside idle
+  seats and category overlaps — e.g. "this is idle AND renews in 5 days,
+  cancel before it auto-charges again." `start_date` already exists in
+  the schema and is populated by `DataSeeder`, just never surfaced in a
+  report yet — worth showing alongside renewal date once this is built.
+
+- **Cancel / add subscription (full CRUD, not just read + flag)** —
+  currently the project can detect and flag waste (`UNDER_REVIEW`) but
+  has no way to act on it. Add:
+    - `SprawlAuditDao.cancelSubscription(int subscriptionId)` — sets
+      `status = 'CANCELLED'` (this status value is already defined in the
+      schema but never used)
+    - `SprawlAuditDao.addSubscription(...)` — a reusable `INSERT`, same
+      logic currently only used internally by `DataSeeder`
+      These closes the loop: detect waste → human reviews → human acts —
+      rather than stopping at "flagged and nothing happens after."
